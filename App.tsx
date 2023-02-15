@@ -135,7 +135,7 @@ const App = () => {
         network: 'celeste', // details for test net
         enableLogging: true,
         enableOneKey: false,
-        skipSw: false,
+        skipSw: true,
       });
     } catch (error) {
       console.log(error, 'mounted caught');
