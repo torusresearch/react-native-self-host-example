@@ -74,6 +74,7 @@ const Section: React.FC<
 };
 
 const GOOGLE = 'google';
+const CUSTOM_AUTH = 'customauth';
 const verifierMap = {
   [GOOGLE]: {
     name: 'Google',
@@ -81,15 +82,16 @@ const verifierMap = {
     clientId: '759944447575-6rm643ia1i9ngmnme3eq5viiep5rp6s0.apps.googleusercontent.com',
     verifier: 'sk-react-native-test',
   },
+  [CUSTOM_AUTH] : {
+    name: 'CustomAuth',
+    typeOfLogin: 'jwt',
+    clientId: 'BHr_dKcxC0ecKn_2dZQmQeNdjPgWykMkcodEHkVvPMo71qzOV6SgtoN8KCvFdLN7bf34JOm89vWQMLFmSfIo84A',
+    verifier: 'web3auth-custom-jwt',
+  }
 };
 
-const directParams = {
-  baseUrl: `http://localhost:3000/serviceworker/`,
-  enableLogging: true,
-  network: 'celeste',
-};
 const serviceProvider = new TorusServiceProvider({
-  customAuthArgs: directParams,
+  // customAuthArgs: directParams,
 } as any);
 const storageLayer = new TorusStorageLayer({
   hostUrl: 'https://metadata.tor.us',
@@ -113,7 +115,8 @@ const setMetadataKey = true;
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
-  const [authVerifier] = useState('google');
+  // const [authVerifier] = useState('google');
+  const [authVerifier] = useState(CUSTOM_AUTH);
   const [logs, setLogs] = useState([]);
 
   const backgroundStyle = {
@@ -130,12 +133,13 @@ const App = () => {
   useEffect(() => {
     try {
       CustomAuth.init({
-        browserRedirectUri: 'https://scripts.toruswallet.io/redirect.html',
+        // browserRedirectUri: 'https://scripts.toruswallet.io/redirect.html',
         redirectUri: 'torusapp://org.torusresearch.customauthexample/redirect',
-        network: 'celeste', // details for test net
+        network: 'cyan', // details for test net
         enableLogging: true,
         enableOneKey: false,
-        skipSw: true,
+        // skipSw: true,
+        skipInit: true,
       });
     } catch (error) {
       console.log(error, 'mounted caught');
@@ -144,7 +148,22 @@ const App = () => {
 
   const login = async (reLogin = false) => {
     try {
-      const { typeOfLogin, clientId, verifier, jwtParams } = (verifierMap as any)[authVerifier];
+      addLog(authVerifier)
+      const { typeOfLogin, clientId, verifier } = (verifierMap as any)[authVerifier];
+      addLog(typeOfLogin)
+      addLog("login")
+      const loginResult = await fetch('https://cc3e-2001-d08-dc-8d99-589c-b0d-91f9-c318.ngrok.io/api/token', { method: 'POST' });
+      addLog("fetch")
+      addLog({ loginResult });
+      const jsonResult = await loginResult.json(); 
+      const idToken = jsonResult.token;
+      const jwtParams = {
+        verifierIdField : 'sub',
+        id_token : idToken,
+        // domain : 'https://localhost:3000'
+      }
+      addLog({ jwtParams });
+
       const loginDetails = await CustomAuth.triggerLogin({
         typeOfLogin,
         verifier,
